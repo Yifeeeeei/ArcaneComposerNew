@@ -245,8 +245,15 @@ button:focus-visible,
     outline: none;
 }
 
+.sort-button.active {
+    border-color: rgba(215, 181, 109, 0.88);
+    background: rgba(215, 181, 109, 0.22);
+}
+
 #zoomin,
 #zoomout,
+#sort_cost_asc,
+#sort_cost_desc,
 #refresh,
 #toggle_deck_info,
 #hint {
@@ -261,6 +268,8 @@ button:focus-visible,
 
 #zoomin:hover,
 #zoomout:hover,
+#sort_cost_asc:hover,
+#sort_cost_desc:hover,
 #refresh:hover,
 #toggle_deck_info:hover,
 #hint:hover {

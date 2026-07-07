@@ -41,19 +41,7 @@ function decode(encoded) {
 function show_cards() {
     document.getElementById("collections_list").innerHTML = "";
     sync_card_grid_layout();
-    // sort displaying_card_infos by number
-    displaying_card_infos.sort((a, b) => {
-        // hero cards goes first, than number
-        if (a.number[0] == 4 && b.number[0] == 4) {
-            return a.number - b.number;
-        } else if (a.number[0] == 4) {
-            return -1;
-        } else if (b.number[0] == 4) {
-            return 1;
-        } else {
-            return a.number - b.number;
-        }
-    });
+    sort_displaying_cards();
 
     for (let i = 0; i < displaying_card_infos.length; i++) {
         const card_info = displaying_card_infos[i];
@@ -61,6 +49,64 @@ function show_cards() {
         card_ele.setAttribute("idx", i);
         document.getElementById("collections_list").appendChild(card_ele);
     }
+}
+
+function get_card_total_cost(card_info) {
+    if (!card_info.elements_cost) {
+        return 0;
+    }
+    let totalCost = 0;
+    const costKeys = Object.keys(card_info.elements_cost);
+    for (let i = 0; i < costKeys.length; i++) {
+        totalCost += card_info.elements_cost[costKeys[i]];
+    }
+    return totalCost;
+}
+
+function compare_cards_by_number(a, b) {
+    // hero cards goes first, than number
+    if (a.number[0] == 4 && b.number[0] == 4) {
+        return a.number - b.number;
+    } else if (a.number[0] == 4) {
+        return -1;
+    } else if (b.number[0] == 4) {
+        return 1;
+    }
+    return a.number - b.number;
+}
+
+function sort_displaying_cards() {
+    if (card_pool_sort_mode === "cost_asc") {
+        displaying_card_infos.sort((a, b) => {
+            return get_card_total_cost(a) - get_card_total_cost(b) || compare_cards_by_number(a, b);
+        });
+        return;
+    }
+    if (card_pool_sort_mode === "cost_desc") {
+        displaying_card_infos.sort((a, b) => {
+            return get_card_total_cost(b) - get_card_total_cost(a) || compare_cards_by_number(a, b);
+        });
+        return;
+    }
+    displaying_card_infos.sort(compare_cards_by_number);
+}
+
+function set_card_pool_sort_mode(sortMode) {
+    card_pool_sort_mode = sortMode;
+    update_card_pool_sort_buttons();
+    if (!Array.isArray(displaying_card_infos)) {
+        return;
+    }
+    show_cards();
+}
+
+function update_card_pool_sort_buttons() {
+    const sortButtons = document.querySelectorAll("[data-card-pool-sort]");
+    sortButtons.forEach(function (button) {
+        const isActive = button.dataset.cardPoolSort === card_pool_sort_mode;
+        button.classList.toggle("active", isActive);
+        button.setAttribute("aria-pressed", isActive ? "true" : "false");
+    });
 }
 
 function sync_card_grid_layout() {

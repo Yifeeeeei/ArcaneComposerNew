@@ -1,6 +1,7 @@
 var all_card_infos;
 var displaying_card_infos;
 var input_filter = "";
+var card_pool_sort_mode = "number";
 var shader;
 var current_deck = { hero: [], main: [], ability: [], extra: [] };
 var deck_hero;
