@@ -20,6 +20,10 @@ var zoom_ratio = 1.25;
 var zoom_img;
 var zoom_info;
 var zoom_text;
+var update_notice_button;
+var update_notice_panel;
+var update_notice_body;
+var update_notice_hash = "";
 
 var curve_min = 0;
 var curve_max = 7;

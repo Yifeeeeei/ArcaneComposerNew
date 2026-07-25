@@ -4,6 +4,7 @@
 
 async function setup() {
     setup_mobile_tabs();
+    setup_update_notice();
     // read the files
     // all_card_infos = await readJsonFile("resources/all_card_infos.json");
     all_card_infos = await readJsonFile(

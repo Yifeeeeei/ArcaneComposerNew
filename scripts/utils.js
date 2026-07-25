@@ -440,6 +440,94 @@ async function readJsonFile(jsonPath) {
     }
 }
 
+async function readTextFile(textPath) {
+    try {
+        const response = await fetch(textPath);
+        if (!response.ok) {
+            return null;
+        }
+        return await response.text();
+    } catch (error) {
+        console.error("Error reading the text file:", error);
+        return null;
+    }
+}
+
+function hash_text(text) {
+    let hash = 0;
+    for (let i = 0; i < text.length; i++) {
+        hash = (hash << 5) - hash + text.charCodeAt(i);
+        hash |= 0;
+    }
+    return hash.toString();
+}
+
+async function setup_update_notice() {
+    update_notice_button = document.getElementById("update_notice_button");
+    update_notice_panel = document.getElementById("update_notice_panel");
+    update_notice_body = document.getElementById("update_notice_body");
+
+    if (!update_notice_button || !update_notice_panel || !update_notice_body) {
+        return;
+    }
+
+    const noticeText = await readTextFile(
+        "https://yifeeeeei.github.io/ArcaneImages/update.txt"
+    );
+
+    if (noticeText == null || noticeText.trim() === "") {
+        update_notice_body.textContent = "暂无更新公告。";
+        update_notice_button.classList.remove("has-unread");
+        return;
+    }
+
+    update_notice_body.textContent = noticeText.trim();
+    update_notice_hash = hash_text(noticeText);
+
+    try {
+        if (localStorage.getItem("arcane_update_notice_read") !== update_notice_hash) {
+            update_notice_button.classList.add("has-unread");
+        }
+    } catch (err) {
+        update_notice_button.classList.add("has-unread");
+    }
+}
+
+function open_update_notice() {
+    if (!shader) {
+        shader = document.getElementById("shader");
+    }
+    if (!update_notice_panel) {
+        update_notice_panel = document.getElementById("update_notice_panel");
+    }
+    if (!update_notice_button) {
+        update_notice_button = document.getElementById("update_notice_button");
+    }
+
+    onclick_shader();
+    show_element(update_notice_panel);
+    show_element(shader);
+
+    if (update_notice_button) {
+        update_notice_button.classList.remove("has-unread");
+    }
+    if (update_notice_hash !== "") {
+        try {
+            localStorage.setItem("arcane_update_notice_read", update_notice_hash);
+        } catch (err) {
+            console.warn("Unable to store update notice read state:", err);
+        }
+    }
+}
+
+function close_update_notice() {
+    if (!shader) {
+        shader = document.getElementById("shader");
+    }
+    hide_element(shader);
+    hide_element(update_notice_panel);
+}
+
 // tag cards to create different border colors
 function get_class_name_by_card_info(card_info) {
     switch (card_info.category) {
@@ -503,6 +591,9 @@ function get_discription_element_by_card_info(card_info) {
 }
 
 function hide_element(element) {
+    if (!element) {
+        return element;
+    }
     element.setAttribute("hidden", "true");
     if (!element.classList.contains("hidden")) {
         element.classList.add("hidden");
@@ -512,6 +603,9 @@ function hide_element(element) {
     // add hidden to class name
 }
 function show_element(element) {
+    if (!element) {
+        return element;
+    }
     if (element.hasAttribute("hidden")) {
         element.removeAttribute("hidden");
     }
@@ -675,6 +769,7 @@ function onclick_shader(event) {
     hide_element(zoom_text);
     hide_element(popup_img);
     hide_element(popup_hint);
+    hide_element(update_notice_panel);
 }
 
 function find_deck_for_card(card_info) {
