@@ -23,21 +23,28 @@ function split_filters() {
     keyword_filter_keywords = ["update"];
     keyword_filters = [];
     for (let i = 0; i < filters.length; i++) {
+        const filter_options = filters[i].split(",").filter(function (item) {
+            return item != "";
+        });
         if (
             filters[i].includes(":") &&
             superior_filter_keywords.includes(filters[i].split(":")[0])
         ) {
             // this is a superior filter
             let key = filters[i].split(":")[0];
-            let value = filters[i].split(":")[1];
-            if (superior_filters[key] == undefined) {
+            let value = filters[i].split(":")[1].split(",").filter(function (item) {
+                return item != "";
+            });
+            if (superior_filters[key] == undefined && value.length > 0) {
                 superior_filters[key] = value;
             }
         } else if (keyword_filter_keywords.includes(filters[i])) {
             keyword_filters.push(filters[i]);
         } else {
             // this is a basic filter
-            basic_filters.push(filters[i]);
+            if (filter_options.length > 0) {
+                basic_filters.push(filter_options);
+            }
         }
     }
     return [basic_filters, keyword_filters, superior_filters];
@@ -54,9 +61,17 @@ function get_card_features(card_info) {
 
 function does_card_satisfy_basic_filter(card_info, basic_filter) {
     let features = get_card_features(card_info);
-    for (let i = 0; i < features.length; i++) {
-        if (features[i].includes(basic_filter)) {
+    for (let option_idx = 0; option_idx < basic_filter.length; option_idx++) {
+        if (
+            basic_filter[option_idx] === "update" &&
+            update_card_numbers.includes(card_info.number)
+        ) {
             return true;
+        }
+        for (let i = 0; i < features.length; i++) {
+            if (features[i].includes(basic_filter[option_idx])) {
+                return true;
+            }
         }
     }
     return false;
@@ -65,7 +80,7 @@ function does_card_satisfy_basic_filter(card_info, basic_filter) {
 function category_filter(card_info, superior_filters) {
     if (
         superior_filters.elem != undefined &&
-        superior_filters.elem != card_info.category
+        !superior_filters.elem.includes(card_info.category)
     ) {
         return false;
     }
@@ -74,7 +89,7 @@ function category_filter(card_info, superior_filters) {
 function type_filter(card_info, superior_filters) {
     if (
         superior_filters.type != undefined &&
-        superior_filters.type != card_info.type
+        !superior_filters.type.includes(card_info.type)
     ) {
         return false;
     }
@@ -91,7 +106,11 @@ function cost_filter(card_info, superior_filters) {
         card_cost += card_info.elements_cost[key];
     }
     // console.log(card_cost, superior_filters);
-    if (parseInt(superior_filters.cost) != card_cost) {
+    if (
+        !superior_filters.cost.some(function (cost) {
+            return parseInt(cost) == card_cost;
+        })
+    ) {
         return false;
     }
     return true;
@@ -100,7 +119,7 @@ function cost_filter(card_info, superior_filters) {
 function version_filter(card_info, superior_filters) {
     if (
         superior_filters.version == undefined ||
-        card_info.version_name == superior_filters.version
+        superior_filters.version.includes(card_info.version_name)
     ) {
         return true;
     }
