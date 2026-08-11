@@ -43,6 +43,7 @@ async function setup() {
 
     // change default enter for input filter
     let input_filt = document.getElementById("input_filter");
+    setup_filter_history(input_filt);
     input_filt.addEventListener("keypress", function (event) {
         if (event.key === "Enter") {
             // 13 is the key code for Enter
@@ -86,8 +87,6 @@ async function setup() {
     show_decks();
     // hide the deckinfo
     hide_element(document.getElementById("deck_info"));
-    // focus on the filter input
-    input_filt.focus();
     // set up initial deck code if any
     set_up_initial_deck_code();
 

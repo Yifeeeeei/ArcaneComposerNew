@@ -145,11 +145,15 @@
                         <strong>卡牌池</strong>
                     </div>
                     <div class="filter-bar">
-                        <input
-                            type="text"
-                            id="input_filter"
-                            placeholder="搜索名称、标签、效果，或输入 elem:火;type:伙伴"
-                        />
+                        <div class="filter-input-wrap">
+                            <input
+                                type="text"
+                                id="input_filter"
+                                autocomplete="off"
+                                placeholder="搜索名称、标签、效果，或输入 elem:火;type:伙伴"
+                            />
+                            <div id="filter_history_menu" class="filter-history-menu hidden" hidden></div>
+                        </div>
                         <button id="button_filter" onclick="button_filter_clicked()">过滤</button>
                     </div>
                     <div class="icon-tools" aria-label="视图工具">

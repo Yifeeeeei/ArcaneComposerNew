@@ -412,6 +412,196 @@ function show_toast(message) {
     }, 2400);
 }
 
+function get_filter_history() {
+    try {
+        const rawHistory = localStorage.getItem(filter_history_storage_key);
+        const parsedHistory = JSON.parse(rawHistory || "[]");
+        if (Array.isArray(parsedHistory)) {
+            return parsedHistory
+                .map(function (item) {
+                    if (typeof item === "string") {
+                        return {
+                            text: item.trim(),
+                            favorite: false,
+                        };
+                    }
+                    if (
+                        item &&
+                        typeof item.text === "string" &&
+                        item.text.trim() !== ""
+                    ) {
+                        return {
+                            text: item.text.trim(),
+                            favorite: item.favorite === true,
+                        };
+                    }
+                    return null;
+                })
+                .filter(function (item) {
+                    return item != null && item.text !== "";
+                });
+        }
+    } catch (err) {
+        console.warn("Unable to read filter history:", err);
+    }
+    return [];
+}
+
+function sort_filter_history(history) {
+    return history.sort(function (a, b) {
+        if (a.favorite !== b.favorite) {
+            return a.favorite ? -1 : 1;
+        }
+        return 0;
+    });
+}
+
+function trim_filter_history(history) {
+    while (history.length > filter_history_limit) {
+        let removeIndex = -1;
+        for (let i = history.length - 1; i >= 0; i--) {
+            if (!history[i].favorite) {
+                removeIndex = i;
+                break;
+            }
+        }
+        if (removeIndex === -1) {
+            history.splice(filter_history_limit);
+            break;
+        }
+        history.splice(removeIndex, 1);
+    }
+    return history;
+}
+
+function persist_filter_history(history) {
+    try {
+        localStorage.setItem(
+            filter_history_storage_key,
+            JSON.stringify(trim_filter_history(sort_filter_history(history)))
+        );
+    } catch (err) {
+        console.warn("Unable to save filter history:", err);
+    }
+}
+
+function save_filter_to_history(filterText) {
+    const normalizedFilter = filterText.trim();
+    if (normalizedFilter === "") {
+        return;
+    }
+    const currentHistory = get_filter_history();
+    let existingItem = null;
+    const nextHistory = currentHistory.filter(function (item) {
+        if (item.text === normalizedFilter) {
+            existingItem = item;
+            return false;
+        }
+        return true;
+    });
+    nextHistory.unshift({
+        text: normalizedFilter,
+        favorite: existingItem ? existingItem.favorite : false,
+    });
+    persist_filter_history(nextHistory);
+}
+
+function toggle_filter_history_favorite(filterText) {
+    const history = get_filter_history();
+    for (let i = 0; i < history.length; i++) {
+        if (history[i].text === filterText) {
+            history[i].favorite = !history[i].favorite;
+            persist_filter_history(history);
+            render_filter_history();
+            return;
+        }
+    }
+}
+
+function hide_filter_history() {
+    const menu = document.getElementById("filter_history_menu");
+    hide_element(menu);
+}
+
+function render_filter_history() {
+    const input = document.getElementById("input_filter");
+    const menu = document.getElementById("filter_history_menu");
+    if (!input || !menu) {
+        return;
+    }
+
+    const currentText = input.value.trim();
+    const history = get_filter_history().filter(function (item) {
+        return currentText === "" || item.text.includes(currentText);
+    });
+
+    menu.innerHTML = "";
+    if (history.length === 0) {
+        hide_filter_history();
+        return;
+    }
+
+    for (let i = 0; i < history.length; i++) {
+        const itemRow = document.createElement("div");
+        itemRow.className = "filter-history-row";
+
+        const favoriteButton = document.createElement("button");
+        favoriteButton.type = "button";
+        favoriteButton.className = "filter-history-favorite";
+        favoriteButton.classList.toggle("active", history[i].favorite);
+        favoriteButton.textContent = history[i].favorite ? "★" : "☆";
+        favoriteButton.title = history[i].favorite ? "取消收藏" : "收藏";
+        favoriteButton.setAttribute(
+            "aria-label",
+            history[i].favorite ? "取消收藏" : "收藏"
+        );
+        favoriteButton.addEventListener("mousedown", function (event) {
+            event.preventDefault();
+            event.stopPropagation();
+            toggle_filter_history_favorite(history[i].text);
+        });
+
+        const itemButton = document.createElement("button");
+        itemButton.type = "button";
+        itemButton.className = "filter-history-item";
+        itemButton.textContent = history[i].text;
+        itemButton.addEventListener("mousedown", function (event) {
+            event.preventDefault();
+            input.value = history[i].text;
+            hide_filter_history();
+            button_filter_clicked();
+        });
+
+        itemRow.appendChild(favoriteButton);
+        itemRow.appendChild(itemButton);
+        menu.appendChild(itemRow);
+    }
+    show_element(menu);
+}
+
+function setup_filter_history(input) {
+    if (!input) {
+        return;
+    }
+    input.addEventListener("focus", render_filter_history);
+    input.addEventListener("input", render_filter_history);
+    input.addEventListener("keydown", function (event) {
+        if (event.key === "Escape") {
+            hide_filter_history();
+        }
+    });
+    document.addEventListener("mousedown", function (event) {
+        const menu = document.getElementById("filter_history_menu");
+        if (
+            menu &&
+            !menu.contains(event.target) &&
+            event.target !== input
+        ) {
+            hide_filter_history();
+        }
+    });
+}
+
 function onclick_deck_minus_button(event) {
     const deck_name = event.target.getAttribute("deck_name");
     const idx = event.target.getAttribute("idx");
@@ -895,6 +1085,8 @@ function get_card_element_by_card_info(card_info, idx) {
 function button_filter_clicked() {
     console.log("button_filter_clicked");
     filter_all();
+    save_filter_to_history(document.getElementById("input_filter").value);
+    hide_filter_history();
     // clear the list
     document.getElementById("collections_list").innerHTML = "";
     // show all cards

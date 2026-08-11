@@ -1,6 +1,8 @@
 var all_card_infos;
 var displaying_card_infos;
 var input_filter = "";
+var filter_history_limit = 12;
+var filter_history_storage_key = "arcane_filter_history";
 var card_pool_sort_mode = "number";
 var shader;
 var current_deck = { hero: [], main: [], ability: [], extra: [] };
