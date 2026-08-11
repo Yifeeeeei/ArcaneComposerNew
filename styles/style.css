@@ -259,6 +259,7 @@ input[type="text"]:focus {
     border: 1px solid rgba(215, 181, 109, 0.36);
     background: rgba(8, 7, 5, 0.97);
     box-shadow: 0 18px 48px rgba(0, 0, 0, 0.44);
+    scrollbar-color: rgba(215, 181, 109, 0.42) rgba(255, 255, 255, 0.06);
 }
 
 .filter-history-row {
@@ -752,6 +753,7 @@ canvas {
 .lower-part::-webkit-scrollbar,
 #zoom_text::-webkit-scrollbar,
 #popup_hint::-webkit-scrollbar,
+.filter-history-menu::-webkit-scrollbar,
 .update-notice-body::-webkit-scrollbar {
     width: 9px;
 }
@@ -759,6 +761,7 @@ canvas {
 .lower-part::-webkit-scrollbar-track,
 #zoom_text::-webkit-scrollbar-track,
 #popup_hint::-webkit-scrollbar-track,
+.filter-history-menu::-webkit-scrollbar-track,
 .update-notice-body::-webkit-scrollbar-track {
     background: rgba(255, 255, 255, 0.06);
 }
@@ -766,6 +769,7 @@ canvas {
 .lower-part::-webkit-scrollbar-thumb,
 #zoom_text::-webkit-scrollbar-thumb,
 #popup_hint::-webkit-scrollbar-thumb,
+.filter-history-menu::-webkit-scrollbar-thumb,
 .update-notice-body::-webkit-scrollbar-thumb {
     background: rgba(215, 181, 109, 0.42);
 }
