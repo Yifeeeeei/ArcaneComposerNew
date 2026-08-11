@@ -113,6 +113,46 @@
                 公告读取中...
             </div>
         </section>
+        <section id="prebuilt_decks_panel" class="prebuilt-decks-panel hidden" hidden>
+            <div class="prebuilt-decks-panel-header">
+                <div>
+                    <span>ArcaneDecks</span>
+                    <strong>预组卡组</strong>
+                </div>
+                <div class="prebuilt-decks-panel-actions">
+                    <button type="button" onclick="load_prebuilt_decks()">刷新</button>
+                    <button type="button" onclick="close_prebuilt_decks_selector()">关闭</button>
+                </div>
+            </div>
+            <div id="prebuilt_decks_list" class="prebuilt-decks-list">
+                <p class="prebuilt-decks-state">预组卡组读取中...</p>
+            </div>
+        </section>
+        <section id="local_decks_panel" class="prebuilt-decks-panel local-decks-panel hidden" hidden>
+            <div class="prebuilt-decks-panel-header">
+                <div>
+                    <span>Local Decks</span>
+                    <strong>本地卡组</strong>
+                </div>
+                <div class="prebuilt-decks-panel-actions">
+                    <button type="button" onclick="close_local_decks_panel()">关闭</button>
+                </div>
+            </div>
+            <div class="local-decks-content">
+                <div class="local-deck-save">
+                    <input
+                        type="text"
+                        id="local_deck_name_input"
+                        autocomplete="off"
+                        placeholder="给当前卡组命名"
+                    />
+                    <button type="button" onclick="save_current_deck_to_local()">保存当前</button>
+                </div>
+                <div id="local_decks_list" class="prebuilt-decks-list local-decks-list">
+                    <p class="prebuilt-decks-state">暂无本地卡组。</p>
+                </div>
+            </div>
+        </section>
         <!-- </div> -->
         <img id="popup_img" hidden />
 
@@ -127,6 +167,8 @@
                 <a href="https://steamcommunity.com/sharedfiles/filedetails/?id=3155709993" target="_blank" id="tts_mod">TTS模组</a>
                 <a href="./Arena/" target="_blank" id="go_to_arena">竞技场</a>
                 <a href="./Packer/" target="_blank" id="go_to_packer">开包模拟</a>
+                <button type="button" class="nav-button" onclick="open_prebuilt_decks_selector()">预组卡组</button>
+                <button type="button" class="nav-button" onclick="open_local_decks_panel()">本地卡组</button>
                 <button type="button" id="update_notice_button" class="nav-button notice-button" onclick="open_update_notice()">公告</button>
             </nav>
         </header>
@@ -196,6 +238,7 @@
                         />
                         <button id="button_build" onclick="onclick_button_build()">导入</button>
                         <button id="button_export" onclick="onclick_button_export()">导出</button>
+                        <button id="button_store" onclick="open_local_decks_panel()">存储</button>
                     </div>
                 </div>
                 <div class="lower-part">

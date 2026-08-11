@@ -73,6 +73,8 @@ async function setup() {
     for (let i = 0; i < all_card_infos.length; i++) {
         card_number_to_idx[all_card_infos[i].number] = i;
     }
+    load_prebuilt_decks();
+    setup_local_decks();
 
     // setup popups
     // popup = document.getElementById("popup");

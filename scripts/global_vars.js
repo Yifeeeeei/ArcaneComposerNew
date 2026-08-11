@@ -13,6 +13,16 @@ var deck_extra;
 var card_number_to_idx = {};
 var input_deck_code;
 var button_build;
+var prebuilt_decks = [];
+var prebuilt_decks_loaded = false;
+var prebuilt_decks_panel;
+var prebuilt_decks_url = "https://yifeeeeei.github.io/ArcaneDecks/index.json";
+var local_decks = [];
+var local_decks_storage_key = "arcane_local_decks";
+var local_decks_limit = 60;
+var local_decks_panel;
+var local_decks_list;
+var local_deck_name_input;
 
 var popup_hint;
 var popup_img;

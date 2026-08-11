@@ -412,6 +412,430 @@ function show_toast(message) {
     }, 2400);
 }
 
+async function load_prebuilt_decks() {
+    const listElement = document.getElementById("prebuilt_decks_list");
+    if (!listElement) {
+        return;
+    }
+    listElement.innerHTML =
+        '<p class="prebuilt-decks-state">预组卡组读取中...</p>';
+
+    const deckIndex = await readJsonFile(prebuilt_decks_url);
+    if (
+        !deckIndex ||
+        !Array.isArray(deckIndex.decks) ||
+        deckIndex.decks.length === 0
+    ) {
+        prebuilt_decks = [];
+        listElement.innerHTML =
+            '<p class="prebuilt-decks-state warning">预组卡组读取失败。</p>';
+        return;
+    }
+
+    prebuilt_decks = deckIndex.decks.filter(function (deck) {
+        return deck && deck.name && deck.deckCode;
+    });
+    prebuilt_decks_loaded = true;
+    render_prebuilt_decks();
+}
+
+function get_prebuilt_deck_path(deck) {
+    if (deck.id) {
+        return deck.id.split("/").filter(function (item) {
+            return item !== "";
+        });
+    }
+    return [deck.name];
+}
+
+function build_prebuilt_deck_tree(decks) {
+    const root = {
+        folders: {},
+        decks: [],
+    };
+
+    for (let i = 0; i < decks.length; i++) {
+        const deck = decks[i];
+        const pathParts = get_prebuilt_deck_path(deck);
+        const deckName = pathParts[pathParts.length - 1] || deck.name;
+        const folderParts = pathParts.slice(0, -1);
+        let cursor = root;
+
+        for (let j = 0; j < folderParts.length; j++) {
+            const folderName = folderParts[j];
+            if (!cursor.folders[folderName]) {
+                cursor.folders[folderName] = {
+                    folders: {},
+                    decks: [],
+                };
+            }
+            cursor = cursor.folders[folderName];
+        }
+
+        cursor.decks.push({
+            deck: deck,
+            displayName: deckName,
+        });
+    }
+
+    return root;
+}
+
+function render_prebuilt_decks() {
+    const listElement = document.getElementById("prebuilt_decks_list");
+    if (!listElement) {
+        return;
+    }
+
+    listElement.innerHTML = "";
+    if (prebuilt_decks.length === 0) {
+        listElement.innerHTML =
+            '<p class="prebuilt-decks-state">暂无预组卡组。</p>';
+        return;
+    }
+
+    const tree = build_prebuilt_deck_tree(prebuilt_decks);
+    render_prebuilt_deck_tree_node(tree, listElement, 0);
+}
+
+function render_prebuilt_deck_tree_node(node, parentElement, depth) {
+    const folderNames = Object.keys(node.folders).sort();
+    for (let i = 0; i < folderNames.length; i++) {
+        const folderName = folderNames[i];
+        const folderElement = document.createElement("details");
+        folderElement.className = "prebuilt-deck-folder";
+
+        const summaryElement = document.createElement("summary");
+        summaryElement.textContent = folderName;
+        folderElement.appendChild(summaryElement);
+
+        const childElement = document.createElement("div");
+        childElement.className = "prebuilt-deck-folder-content";
+        render_prebuilt_deck_tree_node(
+            node.folders[folderName],
+            childElement,
+            depth + 1
+        );
+        folderElement.appendChild(childElement);
+        parentElement.appendChild(folderElement);
+    }
+
+    node.decks.sort(function (a, b) {
+        return a.displayName.localeCompare(b.displayName, "zh-CN");
+    });
+    for (let i = 0; i < node.decks.length; i++) {
+        parentElement.appendChild(
+            create_prebuilt_deck_item(node.decks[i].deck, node.decks[i].displayName)
+        );
+    }
+}
+
+function create_prebuilt_deck_item(deck, displayName) {
+    const itemElement = document.createElement("div");
+    itemElement.className = "prebuilt-deck-item";
+
+    const infoElement = document.createElement("div");
+    infoElement.className = "prebuilt-deck-info";
+
+    const nameElement = document.createElement("strong");
+    nameElement.textContent = displayName || deck.name;
+    infoElement.appendChild(nameElement);
+
+    const metaElement = document.createElement("span");
+    const versions = Array.isArray(deck.version) ? deck.version : [];
+    metaElement.textContent =
+        versions.length > 0 ? versions.join(" / ") : "未标记版本";
+    infoElement.appendChild(metaElement);
+
+    const importButton = document.createElement("button");
+    importButton.type = "button";
+    importButton.textContent = "导入";
+    importButton.addEventListener("click", function () {
+        import_prebuilt_deck(deck);
+    });
+
+    itemElement.appendChild(infoElement);
+    itemElement.appendChild(importButton);
+    return itemElement;
+}
+
+function open_prebuilt_decks_selector() {
+    if (!shader) {
+        shader = document.getElementById("shader");
+    }
+    if (!prebuilt_decks_panel) {
+        prebuilt_decks_panel = document.getElementById("prebuilt_decks_panel");
+    }
+    onclick_shader();
+    show_element(prebuilt_decks_panel);
+    show_element(shader);
+    if (!prebuilt_decks_loaded) {
+        load_prebuilt_decks();
+    }
+}
+
+function close_prebuilt_decks_selector() {
+    if (!shader) {
+        shader = document.getElementById("shader");
+    }
+    hide_element(shader);
+    hide_element(prebuilt_decks_panel);
+}
+
+function import_prebuilt_deck(deck) {
+    if (!deck || !deck.deckCode) {
+        return;
+    }
+    input_deck_code.value = deck.deckCode;
+    onclick_button_build();
+    close_prebuilt_decks_selector();
+    show_toast("已导入预组：" + deck.name);
+}
+
+function setup_local_decks() {
+    local_decks_panel = document.getElementById("local_decks_panel");
+    local_decks_list = document.getElementById("local_decks_list");
+    local_deck_name_input = document.getElementById("local_deck_name_input");
+    if (local_deck_name_input && !local_deck_name_input.dataset.saveBound) {
+        local_deck_name_input.addEventListener("keypress", function (event) {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                save_current_deck_to_local();
+            }
+        });
+        local_deck_name_input.dataset.saveBound = "true";
+    }
+    local_decks = get_local_decks();
+    render_local_decks();
+}
+
+function get_local_decks() {
+    try {
+        const rawDecks = localStorage.getItem(local_decks_storage_key);
+        const parsedDecks = JSON.parse(rawDecks || "[]");
+        if (!Array.isArray(parsedDecks)) {
+            return [];
+        }
+        return parsedDecks
+            .map(function (deck) {
+                if (
+                    !deck ||
+                    typeof deck.name !== "string" ||
+                    typeof deck.deckCode !== "string"
+                ) {
+                    return null;
+                }
+                const name = deck.name.trim();
+                const deckCode = deck.deckCode.trim();
+                if (name === "" || deckCode === "") {
+                    return null;
+                }
+                return {
+                    id:
+                        typeof deck.id === "string" && deck.id !== ""
+                            ? deck.id
+                            : "local-" + Date.now().toString(),
+                    name: name,
+                    deckCode: deckCode,
+                    updatedAt:
+                        typeof deck.updatedAt === "number"
+                            ? deck.updatedAt
+                            : Date.now(),
+                };
+            })
+            .filter(function (deck) {
+                return deck !== null;
+            })
+            .slice(0, local_decks_limit);
+    } catch (err) {
+        return [];
+    }
+}
+
+function persist_local_decks() {
+    try {
+        localStorage.setItem(
+            local_decks_storage_key,
+            JSON.stringify(local_decks.slice(0, local_decks_limit))
+        );
+        return true;
+    } catch (err) {
+        show_toast("本地卡组保存失败，请检查浏览器存储权限");
+        return false;
+    }
+}
+
+function get_current_deck_card_count() {
+    return (
+        current_deck.hero.length +
+        current_deck.main.length +
+        current_deck.ability.length +
+        current_deck.extra.length
+    );
+}
+
+function open_local_decks_panel() {
+    if (!shader) {
+        shader = document.getElementById("shader");
+    }
+    if (!local_decks_panel) {
+        setup_local_decks();
+    }
+    onclick_shader();
+    render_local_decks();
+    show_element(local_decks_panel);
+    show_element(shader);
+}
+
+function close_local_decks_panel() {
+    if (!shader) {
+        shader = document.getElementById("shader");
+    }
+    hide_element(shader);
+    hide_element(local_decks_panel);
+}
+
+function save_current_deck_to_local() {
+    if (!local_deck_name_input) {
+        setup_local_decks();
+    }
+    const name = local_deck_name_input.value.trim();
+    if (name === "") {
+        show_toast("请先给当前卡组命名");
+        return;
+    }
+    if (get_current_deck_card_count() === 0) {
+        show_toast("当前没有可存储的卡组");
+        return;
+    }
+
+    const deckCode = get_current_deck_code();
+    const now = Date.now();
+    const existingIndex = local_decks.findIndex(function (deck) {
+        return deck.name === name;
+    });
+    const storedDeck = {
+        id:
+            existingIndex >= 0
+                ? local_decks[existingIndex].id
+                : "local-" + now.toString(),
+        name: name,
+        deckCode: deckCode,
+        updatedAt: now,
+    };
+
+    if (existingIndex >= 0) {
+        local_decks.splice(existingIndex, 1);
+    }
+    local_decks.unshift(storedDeck);
+    local_decks = local_decks.slice(0, local_decks_limit);
+    if (!persist_local_decks()) {
+        return;
+    }
+    render_local_decks();
+    show_toast("已存储本地卡组：" + name);
+}
+
+function render_local_decks() {
+    if (!local_decks_list) {
+        return;
+    }
+    local_decks = get_local_decks();
+    local_decks_list.innerHTML = "";
+    if (local_decks.length === 0) {
+        local_decks_list.innerHTML =
+            '<p class="prebuilt-decks-state">暂无本地卡组。</p>';
+        return;
+    }
+
+    for (let i = 0; i < local_decks.length; i++) {
+        local_decks_list.appendChild(create_local_deck_item(local_decks[i]));
+    }
+}
+
+function create_local_deck_item(deck) {
+    const itemElement = document.createElement("div");
+    itemElement.className = "prebuilt-deck-item local-deck-item";
+
+    const infoElement = document.createElement("div");
+    infoElement.className = "prebuilt-deck-info";
+
+    const nameElement = document.createElement("strong");
+    nameElement.textContent = deck.name;
+    infoElement.appendChild(nameElement);
+
+    const metaElement = document.createElement("span");
+    metaElement.textContent = "保存于 " + format_local_deck_time(deck.updatedAt);
+    infoElement.appendChild(metaElement);
+
+    const actionsElement = document.createElement("div");
+    actionsElement.className = "local-deck-actions";
+
+    const importButton = document.createElement("button");
+    importButton.type = "button";
+    importButton.textContent = "导入";
+    importButton.addEventListener("click", function () {
+        import_local_deck(deck);
+    });
+
+    const deleteButton = document.createElement("button");
+    deleteButton.type = "button";
+    deleteButton.className = "danger";
+    deleteButton.textContent = "删除";
+    deleteButton.addEventListener("click", function () {
+        delete_local_deck(deck.id);
+    });
+
+    actionsElement.appendChild(importButton);
+    actionsElement.appendChild(deleteButton);
+    itemElement.appendChild(infoElement);
+    itemElement.appendChild(actionsElement);
+    return itemElement;
+}
+
+function format_local_deck_time(timestamp) {
+    const date = new Date(timestamp);
+    if (Number.isNaN(date.getTime())) {
+        return "未知时间";
+    }
+    return date.toLocaleString("zh-CN", {
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+    });
+}
+
+function import_local_deck(deck) {
+    if (!deck || !deck.deckCode) {
+        return;
+    }
+    input_deck_code.value = deck.deckCode;
+    onclick_button_build();
+    close_local_decks_panel();
+    show_toast("已导入本地卡组：" + deck.name);
+}
+
+function delete_local_deck(deckId) {
+    const deck = local_decks.find(function (item) {
+        return item.id === deckId;
+    });
+    if (!deck) {
+        return;
+    }
+    if (!window.confirm("删除本地卡组「" + deck.name + "」？")) {
+        return;
+    }
+    local_decks = local_decks.filter(function (item) {
+        return item.id !== deckId;
+    });
+    if (!persist_local_decks()) {
+        return;
+    }
+    render_local_decks();
+    show_toast("已删除本地卡组：" + deck.name);
+}
+
 function get_filter_history() {
     try {
         const rawHistory = localStorage.getItem(filter_history_storage_key);
@@ -960,6 +1384,8 @@ function onclick_shader(event) {
     hide_element(popup_img);
     hide_element(popup_hint);
     hide_element(update_notice_panel);
+    hide_element(prebuilt_decks_panel);
+    hide_element(local_decks_panel);
 }
 
 function find_deck_for_card(card_info) {
