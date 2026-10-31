@@ -1171,12 +1171,16 @@ function get_class_name_by_card_info(card_info) {
         case "水纹":
         case "水":
             return "ele_water";
+        case "大气":
         case "气":
             return "ele_air";
+        case "地脉":
         case "地":
             return "ele_earth";
+        case "光辉":
         case "光":
             return "ele_light";
+        case "暗影":
         case "暗":
             return "ele_dark";
         default:
