@@ -64,8 +64,8 @@
                 <li>特殊关键词："update":最新改动卡牌</li>
                 <li>元素过滤器："elem:" + 无/火/水/气/地/光/暗</li>
                 <li>类别过滤取："type:" + 伙伴/技能/道具/人物</li>
-                <li>费用过滤器："cost:" + 对应费用</li>
-                <li>版本过滤器："version:" + 扩展包名(基础包/王权纷争)</li>
+                <li>法力过滤器："mana:" 或 "cost:" + 对应法力</li>
+                <li>新版还支持："set:"、"rarity:"、"subtype:"</li>
 
                 <li>
                     过滤器组合：用分号";"组合不同的过滤器，过滤器之间为与的关系
@@ -77,8 +77,8 @@
             </ul>
             <ul>
                 <strong>示例</strong>
-                <li>elem:火;type:生物;cost:3;version:基础包</li>
-                <li>elem:火,水;type:伙伴,道具</li>
+                <li>elem:火焰;type:伙伴;mana:3;set:基础包</li>
+                <li>elem:火焰,水纹;type:伙伴,道具</li>
                 <li>传奇;龙</li>
                 <li>传奇,传说;cost:3,4</li>
                 <li>type:技能;风暴之怒</li>
@@ -201,8 +201,8 @@
                     <div class="icon-tools" aria-label="视图工具">
                         <img src="./resources/zoomin.svg" id="zoomin" alt="放大" onclick="onclick_zoomin()" title="放大卡牌" />
                         <img src="./resources/zoomout.svg" id="zoomout" alt="缩小" onclick="onclick_zoomout()" title="缩小卡牌" />
-                        <img src="./resources/sort-cost-asc.svg" id="sort_cost_asc" class="sort-button" data-card-pool-sort="cost_asc" alt="费用升序" onclick="set_card_pool_sort_mode('cost_asc')" title="费用升序" />
-                        <img src="./resources/sort-cost-desc.svg" id="sort_cost_desc" class="sort-button" data-card-pool-sort="cost_desc" alt="费用降序" onclick="set_card_pool_sort_mode('cost_desc')" title="费用降序" />
+                        <img src="./resources/sort-cost-asc.svg" id="sort_cost_asc" class="sort-button" data-card-pool-sort="cost_asc" alt="法力升序" onclick="set_card_pool_sort_mode('cost_asc')" title="法力升序" />
+                        <img src="./resources/sort-cost-desc.svg" id="sort_cost_desc" class="sort-button" data-card-pool-sort="cost_desc" alt="法力降序" onclick="set_card_pool_sort_mode('cost_desc')" title="法力降序" />
                         <img src="./resources/refresh.svg" id="refresh" alt="刷新" onclick="onclick_refresh()" title="刷新显示" />
                         <img id="toggle_deck_info" src="./resources/chart.svg" alt="统计" onclick="toggle_deck_info_onclick()" title="卡组统计" />
                         <img id="hint" src="./resources/hint.svg" alt="帮助" onclick="onclick_hint()" title="帮助" />
@@ -248,7 +248,7 @@
                     </p>
                     <div id="deck_hero"></div>
                     <p class="deck_header" id="main_header">
-                        <strong>主要卡组 0/30</strong>
+                        <strong>主要卡组 0/40</strong>
                     </p>
                     <div id="deck_main"></div>
                     <p class="deck_header" id="ability_header">

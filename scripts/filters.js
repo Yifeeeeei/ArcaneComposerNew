@@ -19,7 +19,16 @@ function split_filters() {
     console.log(filters);
     basic_filters = [];
     superior_filters = {};
-    superior_filter_keywords = ["elem", "type", "cost", "version"];
+    superior_filter_keywords = [
+        "elem",
+        "type",
+        "cost",
+        "mana",
+        "version",
+        "set",
+        "rarity",
+        "subtype",
+    ];
     keyword_filter_keywords = ["update"];
     keyword_filters = [];
     for (let i = 0; i < filters.length; i++) {
@@ -54,7 +63,9 @@ function get_card_features(card_info) {
     let features = [];
     features.push(card_info.number.toString());
     features.push(card_info.name);
-    features.push(card_info.tag);
+    features.push(card_info.tag || "");
+    features.push(card_info.subtype || "");
+    features.push(card_info.rarity || "");
     features.push(card_info.description);
     return features;
 }
@@ -96,21 +107,13 @@ function type_filter(card_info, superior_filters) {
     return true;
 }
 function cost_filter(card_info, superior_filters) {
-    if (superior_filters.cost == undefined) {
+    const costs = superior_filters.mana || superior_filters.cost;
+    if (costs == undefined) {
         return true;
     }
-
-    let card_cost = 0;
-    for (let i = 0; i < Object.keys(card_info.elements_cost).length; i++) {
-        const key = Object.keys(card_info.elements_cost)[i];
-        card_cost += card_info.elements_cost[key];
-    }
-    // console.log(card_cost, superior_filters);
-    if (
-        !superior_filters.cost.some(function (cost) {
-            return parseInt(cost) == card_cost;
-        })
-    ) {
+    if (!costs.some(function (cost) {
+        return parseInt(cost, 10) == get_card_total_cost(card_info);
+    })) {
         return false;
     }
     return true;
@@ -119,11 +122,18 @@ function cost_filter(card_info, superior_filters) {
 function version_filter(card_info, superior_filters) {
     if (
         superior_filters.version == undefined ||
-        superior_filters.version.includes(card_info.version_name)
+        superior_filters.version.includes(card_info.version_name || card_info.set_name)
     ) {
         return true;
     }
     return false;
+}
+
+function field_filter(card_info, superior_filters, key, fieldName) {
+    if (superior_filters[key] == undefined) {
+        return true;
+    }
+    return superior_filters[key].includes(card_info[fieldName]);
 }
 
 function does_card_satisfy_superior_filters(card_info, superior_filters) {
@@ -137,6 +147,15 @@ function does_card_satisfy_superior_filters(card_info, superior_filters) {
         return false;
     }
     if (!version_filter(card_info, superior_filters)) {
+        return false;
+    }
+    if (!field_filter(card_info, superior_filters, "set", "set_name")) {
+        return false;
+    }
+    if (!field_filter(card_info, superior_filters, "rarity", "rarity")) {
+        return false;
+    }
+    if (!field_filter(card_info, superior_filters, "subtype", "subtype")) {
         return false;
     }
     return true;

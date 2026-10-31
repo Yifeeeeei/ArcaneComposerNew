@@ -1,4 +1,8 @@
 var all_card_infos;
+var card_data_url =
+    "https://yifeeeeei.github.io/ArcaneImages/new_output/all_card_infos.json";
+var card_image_base_url = "https://yifeeeeei.github.io/ArcaneImages/";
+var is_new_card_schema = true;
 var displaying_card_infos;
 var input_filter = "";
 var filter_history_limit = 12;

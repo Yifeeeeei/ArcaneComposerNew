@@ -6,10 +6,10 @@ async function setup() {
     setup_mobile_tabs();
     setup_update_notice();
     // read the files
-    // all_card_infos = await readJsonFile("resources/all_card_infos.json");
-    all_card_infos = await readJsonFile(
-        "https://yifeeeeei.github.io/ArcaneImages/output/all_card_infos.json"
-    );
+    all_card_infos = await readJsonFile(card_data_url);
+    if (Array.isArray(all_card_infos)) {
+        all_card_infos = all_card_infos.map(normalize_card_info);
+    }
     sort_cards_by_number(all_card_infos);
     console.log(all_card_infos.length, "all card infos read");
     // display all cards
@@ -40,6 +40,12 @@ async function setup() {
     deck_main = document.getElementById("deck_main");
     deck_ability = document.getElementById("deck_ability");
     deck_extra = document.getElementById("deck_extra");
+    if (is_new_card_schema) {
+        document.getElementById("ability_header").classList.add("hidden");
+        document.getElementById("deck_ability").classList.add("hidden");
+        document.getElementById("extra_header").classList.add("hidden");
+        document.getElementById("deck_extra").classList.add("hidden");
+    }
 
     // change default enter for input filter
     let input_filt = document.getElementById("input_filter");

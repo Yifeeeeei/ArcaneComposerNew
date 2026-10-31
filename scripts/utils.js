@@ -26,12 +26,15 @@ function decode(encoded) {
     });
 
     for (let i = 0; i < numbers.length; i++) {
-        try {
-            numbers[i] = parseInt(numbers[i]);
-        } catch (err) {
-            alert("Invalid deck code: " + numbers[i] + " is not a number!");
-            numbers.splice(i, 1);
-            i--;
+        if (!is_new_card_schema) {
+            const parsed = parseInt(numbers[i], 10);
+            if (Number.isNaN(parsed)) {
+                alert("Invalid deck code: " + numbers[i] + " is not a number!");
+                numbers.splice(i, 1);
+                i--;
+                continue;
+            }
+            numbers[i] = parsed;
         }
     }
     return numbers;
@@ -52,6 +55,9 @@ function show_cards() {
 }
 
 function get_card_total_cost(card_info) {
+    if (card_info && card_info.mana_cost !== undefined) {
+        return card_info.mana_cost === null ? 0 : Number(card_info.mana_cost);
+    }
     if (!card_info.elements_cost) {
         return 0;
     }
@@ -66,13 +72,17 @@ function get_card_total_cost(card_info) {
 function compare_cards_by_number(a, b) {
     // hero cards goes first, than number
     if (a.number[0] == 4 && b.number[0] == 4) {
-        return a.number - b.number;
+        return String(a.number).localeCompare(String(b.number), undefined, {
+            numeric: true,
+        });
     } else if (a.number[0] == 4) {
         return -1;
     } else if (b.number[0] == 4) {
         return 1;
     }
-    return a.number - b.number;
+    return String(a.number).localeCompare(String(b.number), undefined, {
+        numeric: true,
+    });
 }
 
 function sort_displaying_cards() {
@@ -147,7 +157,8 @@ function check_deck() {
     }
     // check main
     note = {};
-    if (current_deck["main"].length > 30) {
+    const mainDeckLimit = is_new_card_schema ? 40 : 30;
+    if (current_deck["main"].length > mainDeckLimit) {
         check_result["main"] = false;
     }
     for (let i = 0; i < current_deck["main"].length; i++) {
@@ -272,7 +283,8 @@ function show_decks() {
         "<strong>" +
         "主要卡组 " +
         current_deck["main"].length +
-        "/30" +
+        "/" +
+        (is_new_card_schema ? 40 : 30) +
         "</strong>";
     if (check_result["main"]) {
         if (
@@ -1035,7 +1047,9 @@ function onclick_deck_minus_button(event) {
 
 function sort_cards_by_number(card_infos) {
     card_infos.sort((a, b) => {
-        return a.number - b.number;
+        return String(a.number).localeCompare(String(b.number), undefined, {
+            numeric: true,
+        });
     });
 }
 
@@ -1236,7 +1250,31 @@ function get_dummy_img_src(card_info) {
 }
 
 function get_image_src(card_info) {
-    return "https://yifeeeeei.github.io/ArcaneImages/" + card_info.output_path;
+    return card_image_base_url + card_info.output_path;
+}
+
+function normalize_card_info(card_info) {
+    if (!card_info || !card_info.set_code) {
+        return card_info;
+    }
+    const normalized = Object.assign({}, card_info);
+    normalized.tag = [card_info.rarity, card_info.subtype]
+        .filter(Boolean)
+        .join(" ");
+    normalized.version = card_info.set_name || "";
+    normalized.version_name = card_info.set_name || "";
+    normalized.elements_cost = card_info.tech_requirement || {};
+    normalized.elements_expense = {};
+    if (card_info.activation_mana !== undefined && card_info.activation_mana !== null) {
+        normalized.elements_expense[card_info.category || "法力"] =
+            card_info.activation_mana;
+    }
+    normalized.attack = card_info.attack ?? -1;
+    normalized.life = card_info.life ?? -1;
+    normalized.power = -1;
+    normalized.duration = -1;
+    normalized.spawns = [];
+    return normalized;
 }
 
 function get_img_element_by_card_info(card_info) {
@@ -1279,6 +1317,10 @@ function get_zoom_elements_str(card_category, card_elements) {
 }
 
 function set_zoom_text(card_info) {
+    if (card_info.set_code) {
+        set_new_schema_zoom_text(card_info);
+        return;
+    }
     let html_template = ``;
     let zoom_number_str = card_info.number.toString();
     let zoom_type_str = card_info.type;
@@ -1360,6 +1402,52 @@ function set_zoom_text(card_info) {
     zoom_text.innerHTML = html_template;
 }
 
+function set_new_schema_zoom_text(card_info) {
+    let html_template = "";
+    const typeLine = [
+        card_info.number,
+        card_info.type,
+        card_info.category,
+        card_info.rarity,
+    ]
+        .filter(Boolean)
+        .join(" · ");
+    html_template += `<li><strong>${card_info.name}</strong></li>`;
+    html_template += `<li>${typeLine}</li>`;
+    if (card_info.mana_cost !== null && card_info.mana_cost !== undefined) {
+        html_template += `<li><strong>法力:</strong> ${card_info.mana_cost}</li>`;
+    }
+    if (card_info.activation_mana !== null && card_info.activation_mana !== undefined) {
+        html_template += `<li><strong>使用法力:</strong> ${card_info.activation_mana}</li>`;
+    }
+    if (Object.keys(card_info.tech_requirement || {}).length > 0) {
+        html_template += `<li><strong>技术需求:</strong> ${get_zoom_elements_str(card_info.category, card_info.tech_requirement)}</li>`;
+    }
+    if (Object.keys(card_info.elements_gain || {}).length > 0) {
+        html_template += `<li><strong>元素获得:</strong> ${get_zoom_elements_str(card_info.category, card_info.elements_gain)}</li>`;
+    }
+    [
+        ["攻击", card_info.attack],
+        ["生命", card_info.life],
+        ["冷却", card_info.cooldown],
+        ["技能槽", card_info.skill_slots],
+    ].forEach(function (entry) {
+        if (entry[1] !== null && entry[1] !== undefined) {
+            html_template += `<li><strong>${entry[0]}:</strong> ${entry[1]}</li>`;
+        }
+    });
+    if (card_info.description) {
+        html_template += `<li><strong>效果:</strong> ${card_info.description}</li>`;
+    }
+    if (card_info.source) {
+        html_template += `<li><strong>来源:</strong> ${card_info.source}</li>`;
+    }
+    if (card_info.quote) {
+        html_template += `<li><i>${card_info.quote}</i></li>`;
+    }
+    zoom_text.innerHTML = `<ul>${html_template}</ul>`;
+}
+
 function onclick_element_show_detail(event) {
     // this would require element to have card_number attribute
     // clear shader's children
@@ -1389,6 +1477,9 @@ function onclick_shader(event) {
 }
 
 function find_deck_for_card(card_info) {
+    if (card_info.set_code) {
+        return card_info.type === "人物" ? "hero" : "main";
+    }
     // 衍生物第三位为0
     if (card_info.number[0] == 4) {
         return "hero";
@@ -1559,11 +1650,7 @@ function get_deck_curve(card_infos) {
     }
     for (let i = 0; i < card_infos.length; i++) {
         let card_info = card_infos[i];
-        let card_cost = 0;
-        for (let i = 0; i < Object.keys(card_info.elements_cost).length; i++) {
-            const key = Object.keys(card_info.elements_cost)[i];
-            card_cost += card_info.elements_cost[key];
-        }
+        let card_cost = get_card_total_cost(card_info);
         if (card_cost > curve_max) {
             card_cost = curve_max;
         }
