@@ -1162,6 +1162,7 @@ function get_class_name_by_card_info(card_info) {
         case "?":
             return "ele_none";
         case "无":
+        case "奥术":
             return "ele_none";
         case "火":
             return "ele_fire";
