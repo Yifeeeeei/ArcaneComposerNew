@@ -1163,9 +1163,12 @@ function get_class_name_by_card_info(card_info) {
             return "ele_none";
         case "无":
         case "奥术":
+        case "人物":
             return "ele_none";
+        case "火焰":
         case "火":
             return "ele_fire";
+        case "水纹":
         case "水":
             return "ele_water";
         case "气":
