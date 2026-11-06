@@ -157,7 +157,7 @@ function check_deck() {
     }
     // check main
     note = {};
-    const mainDeckLimit = is_new_card_schema ? 40 : 30;
+    const mainDeckLimit = 30;
     if (current_deck["main"].length > mainDeckLimit) {
         check_result["main"] = false;
     }
@@ -284,7 +284,7 @@ function show_decks() {
         "主要卡组 " +
         current_deck["main"].length +
         "/" +
-        (is_new_card_schema ? 40 : 30) +
+        30 +
         "</strong>";
     if (check_result["main"]) {
         if (
