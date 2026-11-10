@@ -1,4 +1,4 @@
-const imageRepoBase = "https://yifeeeeei.github.io/ArcaneImages";
+const imageRepoBase = "https://raw.githubusercontent.com/Yifeeeeei/ArcaneImages/main";
 const width = numberToVw(177 * 0.11);
 const height = numberToVw(258 * 0.11);
 

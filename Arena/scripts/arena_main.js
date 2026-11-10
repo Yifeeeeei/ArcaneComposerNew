@@ -6,7 +6,7 @@ async function setup() {
     // read the files
     // all_card_infos = await readJsonFile("resources/all_card_infos.json");
     all_card_infos = await readJsonFile(
-        "https://yifeeeeei.github.io/ArcaneImages/output/all_card_infos.json"
+        "https://raw.githubusercontent.com/Yifeeeeei/ArcaneImages/main/output/all_card_infos.json"
     );
     sort_cards_by_number(all_card_infos);
     console.log(all_card_infos.length, "all card infos read");

@@ -1100,7 +1100,7 @@ async function setup_update_notice() {
     }
 
     const noticeText = await readTextFile(
-        "https://yifeeeeei.github.io/ArcaneImages/update.txt"
+        "https://raw.githubusercontent.com/Yifeeeeei/ArcaneImages/main/update.txt"
     );
 
     if (noticeText == null || noticeText.trim() === "") {

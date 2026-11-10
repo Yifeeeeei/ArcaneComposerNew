@@ -18,7 +18,7 @@ async function setup() {
     show_cards();
     // read the update cards
     update_card_numbers = await readJsonFile(
-        "https://yifeeeeei.github.io/ArcaneImages/update.json"
+        "https://raw.githubusercontent.com/Yifeeeeei/ArcaneImages/main/update.json"
     );
     if (update_card_numbers == null) {
         update_card_numbers = [];
