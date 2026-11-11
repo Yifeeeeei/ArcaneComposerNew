@@ -6,9 +6,17 @@ async function setup() {
     setup_mobile_tabs();
     setup_update_notice();
     // read the files
-    all_card_infos = await readJsonFile(card_data_url);
+    const card_data_results = await Promise.all([
+        readJsonFile(card_data_url),
+        readJsonFile(legacy_card_data_url),
+    ]);
+    all_card_infos = card_data_results[0];
+    const legacy_card_infos = Array.isArray(card_data_results[1])
+        ? card_data_results[1]
+        : [];
     if (Array.isArray(all_card_infos)) {
         all_card_infos = all_card_infos.map(normalize_card_info);
+        hydrate_new_schema_spawns(all_card_infos, legacy_card_infos);
     }
     sort_cards_by_number(all_card_infos);
     console.log(all_card_infos.length, "all card infos read");
@@ -43,8 +51,6 @@ async function setup() {
     if (is_new_card_schema) {
         document.getElementById("ability_header").classList.add("hidden");
         document.getElementById("deck_ability").classList.add("hidden");
-        document.getElementById("extra_header").classList.add("hidden");
-        document.getElementById("deck_extra").classList.add("hidden");
     }
 
     // change default enter for input filter

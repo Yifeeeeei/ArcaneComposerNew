@@ -1,6 +1,8 @@
 var all_card_infos;
 var card_data_url =
     "https://raw.githubusercontent.com/Yifeeeeei/ArcaneImages/main/new_output/all_card_infos.json";
+var legacy_card_data_url =
+    "https://raw.githubusercontent.com/Yifeeeeei/ArcaneImages/main/output/all_card_infos.json";
 var card_image_base_url = "https://raw.githubusercontent.com/Yifeeeeei/ArcaneImages/main/";
 var is_new_card_schema = true;
 var displaying_card_infos;

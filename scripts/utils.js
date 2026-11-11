@@ -328,7 +328,10 @@ function show_decks() {
         }
     }
     document.getElementById("extra_header").innerHTML =
-        "<strong>" + "额外卡组 " + current_deck["extra"].length + "</strong>";
+        "<strong>" +
+        (is_new_card_schema ? "衍生牌 " : "额外卡组 ") +
+        current_deck["extra"].length +
+        "</strong>";
     show_deck_info();
 }
 
@@ -344,6 +347,12 @@ function onclick_button_build(event) {
         const card_info = all_card_infos[card_number_to_idx[card_numbers[i]]];
         const deck = find_deck_for_card(card_info);
         current_deck[deck].push(card_info);
+    }
+    const imported_cards = current_deck["hero"]
+        .concat(current_deck["main"])
+        .concat(current_deck["ability"]);
+    for (let i = 0; i < imported_cards.length; i++) {
+        add_spawn_cards(imported_cards[i]);
     }
     sort_cards_by_number(current_deck["hero"]);
     sort_cards_by_number(current_deck["main"]);
@@ -1281,8 +1290,53 @@ function normalize_card_info(card_info) {
     normalized.life = card_info.life ?? -1;
     normalized.power = -1;
     normalized.duration = -1;
-    normalized.spawns = [];
+    normalized.spawns = normalize_spawn_numbers(card_info.spawns);
     return normalized;
+}
+
+function normalize_spawn_numbers(spawns) {
+    if (!Array.isArray(spawns)) {
+        return [];
+    }
+    return spawns
+        .map(function (number) {
+            return String(number).trim();
+        })
+        .filter(function (number) {
+            return number !== "";
+        });
+}
+
+function hydrate_new_schema_spawns(new_cards, legacy_cards) {
+    if (!Array.isArray(new_cards) || !Array.isArray(legacy_cards)) {
+        return;
+    }
+    const legacy_by_number = {};
+    for (let i = 0; i < legacy_cards.length; i++) {
+        legacy_by_number[String(legacy_cards[i].number)] = legacy_cards[i];
+    }
+    const new_by_legacy_number = {};
+    for (let i = 0; i < new_cards.length; i++) {
+        const art_ref = new_cards[i].art_ref;
+        if (art_ref !== null && art_ref !== undefined && art_ref !== "") {
+            new_by_legacy_number[String(art_ref)] = new_cards[i];
+        }
+    }
+    for (let i = 0; i < new_cards.length; i++) {
+        const card_info = new_cards[i];
+        const spawn_numbers = new Set(normalize_spawn_numbers(card_info.spawns));
+        const legacy_card = legacy_by_number[String(card_info.art_ref || "")];
+        const legacy_spawns = legacy_card
+            ? normalize_spawn_numbers(legacy_card.spawns)
+            : [];
+        for (let j = 0; j < legacy_spawns.length; j++) {
+            const spawn_info = new_by_legacy_number[legacy_spawns[j]];
+            if (spawn_info && spawn_info.rarity === "衍生") {
+                spawn_numbers.add(String(spawn_info.number));
+            }
+        }
+        card_info.spawns = Array.from(spawn_numbers);
+    }
 }
 
 function get_img_element_by_card_info(card_info) {
@@ -1447,6 +1501,13 @@ function set_new_schema_zoom_text(card_info) {
     if (card_info.description) {
         html_template += `<li><strong>效果:</strong> ${card_info.description}</li>`;
     }
+    if (card_info.spawns.length > 0) {
+        const spawn_names = card_info.spawns.map(function (number) {
+            const spawn_info = get_card_info_by_number(number);
+            return spawn_info ? spawn_info.name : number;
+        });
+        html_template += `<li><strong>衍生:</strong> ${spawn_names.join("、")}</li>`;
+    }
     if (card_info.source) {
         html_template += `<li><strong>来源:</strong> ${card_info.source}</li>`;
     }
@@ -1486,7 +1547,10 @@ function onclick_shader(event) {
 
 function find_deck_for_card(card_info) {
     if (card_info.set_code) {
-        return card_info.type === "人物" ? "hero" : "main";
+        if (card_info.type === "人物") {
+            return "hero";
+        }
+        return card_info.rarity === "衍生" ? "extra" : "main";
     }
     // 衍生物第三位为0
     if (card_info.number[0] == 4) {
@@ -1516,12 +1580,21 @@ function onclick_add_button(event) {
     const deck = find_deck_for_card(card_info);
     current_deck[deck].push(card_info);
     sort_cards_by_number(current_deck[deck]);
-    // add spawns
+    add_spawn_cards(card_info);
+    show_decks();
+    // block onclick event being passed to parent elements
+    event.stopPropagation();
+}
+
+function add_spawn_cards(card_info) {
     const spawns = card_info.hasOwnProperty("spawns") ? card_info.spawns : [];
     for (let i = 0; i < spawns.length; i++) {
-        // parse it to int then to string
-        let spawn_number = parseInt(spawns[i]).toString();
+        const spawn_number = String(spawns[i]);
         const spawn_info = get_card_info_by_number(spawn_number);
+        if (!spawn_info) {
+            console.warn("Unknown spawned card:", spawn_number, card_info.number);
+            continue;
+        }
         const spawn_deck = find_deck_for_card(spawn_info);
         let card_already_in_extra_deck = false;
         for (let j = 0; j < current_deck[spawn_deck].length; j++) {
@@ -1536,9 +1609,6 @@ function onclick_add_button(event) {
         current_deck[spawn_deck].push(spawn_info);
         sort_cards_by_number(current_deck[spawn_deck]);
     }
-    show_decks();
-    // block onclick event being passed to parent elements
-    event.stopPropagation();
 }
 
 function get_header_element_by_card_info(card_info, idx) {
