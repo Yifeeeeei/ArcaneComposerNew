@@ -1280,7 +1280,10 @@ function normalize_card_info(card_info) {
         .join(" ");
     normalized.version = card_info.set_name || "";
     normalized.version_name = card_info.set_name || "";
-    normalized.elements_cost = card_info.tech_requirement || {};
+    normalized.elements_cost =
+        card_info.load_occupancy || card_info.tech_requirement || {};
+    normalized.elements_gain =
+        card_info.load_capacity || card_info.elements_gain || {};
     normalized.elements_expense = {};
     if (card_info.activation_mana !== undefined && card_info.activation_mana !== null) {
         normalized.elements_expense[card_info.category || "法力"] =
@@ -1482,11 +1485,15 @@ function set_new_schema_zoom_text(card_info) {
     if (card_info.activation_mana !== null && card_info.activation_mana !== undefined) {
         html_template += `<li><strong>使用法力:</strong> ${card_info.activation_mana}</li>`;
     }
-    if (Object.keys(card_info.tech_requirement || {}).length > 0) {
-        html_template += `<li><strong>技术需求:</strong> ${get_zoom_elements_str(card_info.category, card_info.tech_requirement)}</li>`;
+    const load_occupancy =
+        card_info.load_occupancy || card_info.tech_requirement || {};
+    const load_capacity =
+        card_info.load_capacity || card_info.elements_gain || {};
+    if (Object.keys(load_occupancy).length > 0) {
+        html_template += `<li><strong>负载占用:</strong> ${get_zoom_elements_str(card_info.category, load_occupancy)}</li>`;
     }
-    if (Object.keys(card_info.elements_gain || {}).length > 0) {
-        html_template += `<li><strong>元素获得:</strong> ${get_zoom_elements_str(card_info.category, card_info.elements_gain)}</li>`;
+    if (Object.keys(load_capacity).length > 0) {
+        html_template += `<li><strong>负载容量:</strong> ${get_zoom_elements_str(card_info.category, load_capacity)}</li>`;
     }
     [
         ["攻击", card_info.attack],
